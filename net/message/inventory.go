@@ -68,7 +68,6 @@ func (msg blocksReq) Verify(buf []byte) error {
 
 func (msg blocksReq) Handle(node Noder) error {
 	log.Debug()
-	log.Debug("handle blocks request")
 	var starthash Uint256
 	var stophash Uint256
 	starthash = msg.p.hashStart

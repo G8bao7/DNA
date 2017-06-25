@@ -4,7 +4,7 @@ import (
 	"DNA/common/config"
 	"DNA/common/log"
 	"DNA/core/ledger"
-	. "DNA/net/message"
+	msg "DNA/net/message"
 	. "DNA/net/protocol"
 	"fmt"
 	"net"
@@ -20,12 +20,12 @@ func (node *node) GetBlkHdrs() {
 	if node.local.GetNbrNodeCnt() < MINCONNCNT {
 		return
 	}
-
+	log.Trace()
 	noders := node.local.GetNeighborNoder()
 	for _, n := range noders {
 		if uint64(ledger.DefaultLedger.Store.GetHeaderHeight()) < n.GetHeight() {
 			if n.LocalNode().IsSyncFailed() == false {
-				SendMsgSyncHeaders(n)
+				msg.SendSyncHeaders(n)
 				n.StartRetryTimer()
 				break
 			}
@@ -39,6 +39,7 @@ func (node *node) SyncBlk() {
 	if currentBlkHeight >= headerHeight {
 		return
 	}
+	log.Trace()
 	var dValue int32
 	var reqCnt uint32
 	var i uint32
@@ -49,7 +50,7 @@ func (node *node) SyncBlk() {
 		dValue = int32(headerHeight - currentBlkHeight - reqCnt)
 		for i = 1; i <= count && dValue >= 0; i++ {
 			hash := ledger.DefaultLedger.Store.GetHeaderHashByHeight(currentBlkHeight + reqCnt)
-			ReqBlkData(n, hash)
+			msg.ReqBlkData(n, hash)
 			n.StoreFlightHeight(currentBlkHeight + reqCnt)
 			reqCnt++
 			dValue--
@@ -63,7 +64,7 @@ func (node *node) SendPingToNbr() {
 		t := n.GetLastRXTime()
 		if time.Since(t).Seconds() > PERIODUPDATETIME {
 			if n.GetState() == ESTABLISH {
-				buf, err := NewPingMsg()
+				buf, err := msg.NewPingMsg()
 				if err != nil {
 					log.Error("failed build a new ping message")
 				} else {
@@ -89,7 +90,7 @@ func (node *node) HeartBeatMonitor() {
 }
 
 func (node *node) ReqNeighborList() {
-	buf, _ := NewMsg("getaddr", node.local)
+	buf, _ := msg.NewMsg("getaddr", node.local)
 	go node.Tx(buf)
 }
 
